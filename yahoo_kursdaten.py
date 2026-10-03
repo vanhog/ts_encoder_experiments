@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import yfinance as yf
+from curl_cffi import requests
 from yfinance.exceptions import YFPricesMissingError
 
 
@@ -49,7 +50,10 @@ def yahoo_kursdaten(isin: str, zeitraum: str) -> pd.DataFrame:
     except OverflowError as exc:
         raise ValueError("Das Enddatum muss vor dem 31/12/9999 liegen.") from exc
 
-    ticker = yf.Ticker(isin)
+    # Ein festes Profil vermeidet inkompatible neue "chrome"-Standardprofile.
+    # Die Session bleibt offen, da yfinance sie intern auch gemeinsam nutzt.
+    session = requests.Session(impersonate="chrome124")
+    ticker = yf.Ticker(isin, session=session)
     spalten = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
     try:
         daten = ticker.history(
